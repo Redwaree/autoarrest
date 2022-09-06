@@ -1,0 +1,343 @@
+
+repeat wait() until game:IsLoaded()
+repeat wait() until game.Players.LocalPlayer.Character:FindFirstChild("FULLY_LOADED_CHAR")
+repeat wait() until game.Players.LocalPlayer.Backpack:FindFirstChild("Cuff")
+wait(.15)
+
+assert(getrawmetatable)
+gmt = getrawmetatable(game)
+setreadonly(gmt, false)
+old = gmt.__namecall
+gmt.__namecall =
+	newcclosure(
+		function(self, ...)
+		local args = {...}
+		if tostring(args[1]) == "TeleportDetect" then
+			return end
+    return old(self, ...)
+end)
+
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LegoHacker1337/legohacks/main/PhysicsServiceOnClient.lua"))()
+setfflag("HumanoidParallelRemoveNoPhysics", "False")
+setfflag("HumanoidParallelRemoveNoPhysicsNoSimulate2", "False")
+game:GetService('RunService'):BindToRenderStep("Stuff", 0 , function()
+    local success, err = pcall(function()
+        if game.Players.LocalPlayer.Character.BodyEffects.Attacking.Value == true then
+            for i,v in pairs(game:GetService('Players'):GetChildren()) do
+                if (v.Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.LeftHand.Position).Magnitude <= 50 then
+                    if game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool") then
+                        if game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool"):FindFirstChild('Handle') then
+                            firetouchinterest(game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool").Handle, v.Character.UpperTorso, 0)
+                        else
+                            firetouchinterest(game.Players.LocalPlayer.Character['RightHand'], v.Character.UpperTorso, 0)
+                            firetouchinterest(game.Players.LocalPlayer.Character['LeftHand'], v.Character.UpperTorso, 0)
+                            firetouchinterest(game.Players.LocalPlayer.Character['RightFoot'], v.Character.UpperTorso, 0)
+                            firetouchinterest(game.Players.LocalPlayer.Character['LeftFoot'], v.Character.UpperTorso, 0)
+                            firetouchinterest(game.Players.LocalPlayer.Character['RightLowerLeg'], v.Character.UpperTorso, 0)
+                            firetouchinterest(game.Players.LocalPlayer.Character['LeftLowerLeg'], v.Character.UpperTorso, 0)
+                        end
+                    end
+                end
+            end
+        end
+    end)
+    if game.Players.LocalPlayer.Character:FindFirstChild("Cuff") then
+        game.Players.LocalPlayer.Character:FindFirstChild("Cuff"):Activate()
+        wait(.5)
+        game.Players.LocalPlayer.Character:FindFirstChild("Cuff"):Deactivate()
+    end
+    game.Players.LocalPlayer.Character:FindFirstChild("Humanoid"):ChangeState(11)
+     local Bag = game.Players.LocalPlayer.Character:FindFirstChild("Christmas_Sock")
+	    if Bag then
+	        Bag:Destroy()
+	        end
+end)
+
+game:GetService('RunService'):BindToRenderStep("CashAura", 0 , function()
+      for i,v in pairs(game:GetService('Workspace')['Ignored']['Drop']:GetChildren()) do
+              if v:IsA('Part') then
+                  if (v.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 12 then
+                      fireclickdetector(v:FindFirstChild('ClickDetector'))
+                  end
+              end
+          end
+          end)
+
+function Shop()
+local AllIDs = {}
+local foundAnything = ""
+local actualHour = os.date("!*t").hour
+local Deleted = false
+local S_T = game:GetService("TeleportService")
+local S_H = game:GetService("HttpService")
+
+local File = pcall(function()
+	AllIDs = S_H:JSONDecode(readfile("server-hop-temp.json"))
+end)
+if not File then
+	table.insert(AllIDs, actualHour)
+	pcall(function()
+		writefile("server-hop-temp.json", S_H:JSONEncode(AllIDs))
+	end)
+
+end
+local function TPReturner(placeId)
+	local Site;
+	if foundAnything == "" then
+		Site = S_H:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. placeId .. '/servers/Public?sortOrder=Asc&limit=25'))
+	else
+		Site = S_H:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. placeId .. '/servers/Public?sortOrder=Asc&limit=25&cursor=' .. foundAnything))
+	end
+	local ID = ""
+	if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
+		foundAnything = Site.nextPageCursor
+	end
+	local num = 0;
+	for i,v in pairs(Site.data) do
+		local Possible = true
+		ID = tostring(v.id)
+		if tonumber(v.maxPlayers) > tonumber(v.playing) then
+			for _,Existing in pairs(AllIDs) do
+				if num ~= 0 then
+					if ID == tostring(Existing) then
+						Possible = false
+					end
+				else
+					if tonumber(actualHour) ~= tonumber(Existing) then
+						local delFile = pcall(function()
+							delfile("server-hop-temp.json")
+							AllIDs = {}
+							table.insert(AllIDs, actualHour)
+						end)
+					end
+				end
+				num = num + 1
+			end
+			if Possible == true then
+				table.insert(AllIDs, ID)
+				wait()
+				pcall(function()
+					writefile("server-hop-temp.json", S_H:JSONEncode(AllIDs))
+					wait()
+					S_T:TeleportToPlaceInstance(placeId, ID, game.Players.LocalPlayer)
+				end)
+				wait() -- 4
+			end
+		end
+	end
+end
+local module = {}
+function module:Teleport(placeId)
+	while wait() do
+		pcall(function()
+			TPReturner(placeId)
+			if foundAnything ~= "" then
+				TPReturner(placeId)
+			end
+		end)
+	end
+end
+return module
+end
+local Serverhop = Shop()
+
+	    local Dir = game:GetService("CoreGui"):FindFirstChild("RobloxPromptGui"):FindFirstChild("promptOverlay")
+	Dir.DescendantAdded:Connect(function(Err)
+		if Err.Name == "ErrorTitle" then
+			Err:GetPropertyChangedSignal("Text"):Connect(function()
+				if Err.Text:sub(0, 12) == "Disconnected" then
+				    Serverhop:Teleport(game.PlaceId)
+				end
+			end)
+		end
+		end)
+
+
+
+function CheckAllWanted()
+    getgenv().c = 0
+for i,v in pairs(game.Players:GetChildren()) do
+    if v:FindFirstChild("DataFolder") then
+    if v.DataFolder.Officer.Value == 0 then
+    getgenv().c = getgenv().c + v.DataFolder.Information.Wanted.Value
+    end
+    end
+end
+if getgenv().c <= 500 then
+    Serverhop:Teleport(game.PlaceId)
+end
+end
+
+
+local Players = game.Players:GetPlayers()
+function GetMostWanted()
+
+
+table.sort(Players, function(a,b)
+    if a.Name ~= "Taunted" then
+            if a:FindFirstChild("DataFolder") then
+           if b:FindFirstChild("DataFolder") then
+          return a.DataFolder.Information.Wanted.Value > b.DataFolder.Information.Wanted.Value
+           end
+end
+end
+   end)
+   return Players[1]
+end
+
+function CuffTarget()
+CheckAllWanted()
+    getgenv().lol = false
+     Target = GetMostWanted()
+     for i = 1,5 do
+     if not Target.Character.BodyEffects:FindFirstChild("Armor") then
+         Target = GetMostWanted()
+Target.Name = "Taunted"
+     end
+     if not Target.Character.BodyEffects:FindFirstChild("Defense") then
+Target.Name = "Taunted"
+         Target = GetMostWanted()
+     end
+     if Target.Parent == game.Workspace then
+Target.Name = "Taunted"
+         Target = GetMostWanted()
+         end
+     end
+
+     --[[if (game.Players.LocalPlayer.Character.UpperTorso.Position.Magnitude - Target.Character.UpperTorso.Position.Magnitude) <= 250 then
+         local Info = TweenInfo.new(math.random(4,6.5),Enum.EasingStyle.Linear)
+         local WaitThing = math.random(4,6.5)
+         elseif (game.Players.LocalPlayer.Character.UpperTorso.Position.Magnitude - Target.Character.UpperTorso.Position.Magnitude) >= 250 then
+            local Info = TweenInfo.new(math.random(10,12),Enum.EasingStyle.Linear)
+            local WaitThing = math.random(10,12)
+     end--]]
+
+local Tween = game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character["HumanoidRootPart"],TweenInfo.new(15,Enum.EasingStyle.Linear),{CFrame = CFrame.new(Target.Character.HumanoidRootPart.Position) * CFrame.new(0,-10,0)})
+Tween:Play()
+wait(15)
+if (Target.Character.UpperTorso.Position.Magnitude - game.Players.LocalPlayer.Character.UpperTorso.Position.Magnitude) >= 125 then
+    local Tween1 = game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character["HumanoidRootPart"],TweenInfo.new(2.5,Enum.EasingStyle.Linear),{CFrame = CFrame.new(Target.Character.HumanoidRootPart.Position) * CFrame.new(0,-10,0)})
+Tween1:Play()
+    end
+workspace.CurrentCamera.CameraSubject = Target.Character.UpperTorso
+repeat
+    task.wait()
+    if game.Players.LocalPlayer.Character:FindFirstChild("[Knife]") then
+        game.Players.LocalPlayer.Character:FindFirstChild("[Knife]"):Activate()
+        end
+        if Target.Character then
+            if Target.Character:FindFirstChild("UpperTorso") then
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Target.Character.UpperTorso.Position) * CFrame.new(0,-10,0)
+            end
+    end
+
+            if game.Players.LocalPlayer.Backpack:FindFirstChild("[Knife]") then
+            game.Players.LocalPlayer.Backpack:FindFirstChild("[Knife]").Parent = game.Players.LocalPlayer.Character
+            end
+
+until Target.Character:WaitForChild("BodyEffects"):WaitForChild("K.O").Value == true
+repeat
+    if Target.Character:WaitForChild("BodyEffects"):WaitForChild("K.O").Value == false then
+        if getgenv().lol == false then
+        repeat
+            getgenv().lol = true
+    task.wait()
+    if game.Players.LocalPlayer.Character:FindFirstChild("[Knife]") then
+        game.Players.LocalPlayer.Character:FindFirstChild("[Knife]"):Activate()
+        end
+        if Target.Character then
+            if Target.Character:FindFirstChild("UpperTorso") then
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Target.Character.UpperTorso.Position) * CFrame.new(0,-10,0)
+            end
+    end
+
+            if game.Players.LocalPlayer.Backpack:FindFirstChild("[Knife]") then
+            game.Players.LocalPlayer.Backpack:FindFirstChild("[Knife]").Parent = game.Players.LocalPlayer.Character
+            end
+            if Target.Character.Parent ~= game.Workspace.Players then
+                Target.Character:Destroy()
+                Target:Destroy()
+                end
+until Target.Character:WaitForChild("BodyEffects"):WaitForChild("K.O").Value == true
+end
+        else
+    task.wait()
+    if game.Players.LocalPlayer.Character:FindFirstChild("Cuff") then
+
+        else
+            if game.Players.LocalPlayer.Backpack:FindFirstChild("Cuff") then
+            game.Players.LocalPlayer.Backpack:FindFirstChild("Cuff").Parent = game.Players.LocalPlayer.Character
+            end
+    end
+        if Target.Character then
+            if Target.Character:FindFirstChild("UpperTorso") then
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Target.Character.UpperTorso.Position) + Vector3.new(0,3,0)
+        end
+end
+end
+until workspace.Players:WaitForChild(Target.Name):WaitForChild("BodyEffects"):WaitForChild("Cuff").Value == true
+wait(.1)
+workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.UpperTorso
+game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0,100,0)
+end
+
+
+
+
+if game.Players.LocalPlayer:WaitForChild("DataFolder").Officer.Value == 1 then
+    CheckAllWanted()
+    game.Players.LocalPlayer.Character.Humanoid.Died:Connect(function()
+        Serverhop:Teleport(game.PlaceId)
+        end)
+    wait()
+    if game.Players.LocalPlayer.Character:FindFirstChild("LeftUpperLeg") then
+        game.Players.LocalPlayer.Character:FindFirstChild("LeftUpperLeg"):Destroy()
+    end
+
+    if game.Players.LocalPlayer.Character:FindFirstChild("RightUpperLeg") then
+        game.Players.LocalPlayer.Character:FindFirstChild("RightUpperLeg"):Destroy()
+    end
+    if game.Players.LocalPlayer.Character:FindFirstChild("Shirt Graphic") then
+        game.Players.LocalPlayer.Character:FindFirstChild("Shirt Graphic"):Destroy()
+    end
+    if game.Players.LocalPlayer.Character.Head:FindFirstChild("face") then
+        game.Players.LocalPlayer.Character.Head:FindFirstChild("face"):Destroy()
+    end
+    for i,v in pairs(game.Players.LocalPlayer.Character:GetChildren()) do
+        if v:IsA('Accessory') then
+            v:Destroy()
+        end
+        end
+    for i,v in pairs(workspace:GetDescendants()) do
+        if v:IsA('Seat') then
+            v:Destroy()
+        end
+    end
+    wait(.25)
+game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Ignored.Shop["[Surgeon Mask] - $25"].Head.CFrame
+wait(.5)
+fireclickdetector(game.Workspace.Ignored.Shop["[Surgeon Mask] - $25"].ClickDetector)
+wait(.5)
+game.Players.LocalPlayer.Backpack:FindFirstChild("Mask").Parent = game.Players.LocalPlayer.Character
+wait(.2)
+game.Players.LocalPlayer.Character:FindFirstChild("Mask"):Activate()
+wait(.15)
+game.Players.LocalPlayer.Character.Humanoid:UnequipTools()
+wait(.5)
+game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Ignored.Shop["[Knife] - $150"].Head.CFrame
+wait(.5)
+fireclickdetector(game.Workspace.Ignored.Shop["[Knife] - $150"].ClickDetector)
+wait(.3)
+CuffTarget()
+wait(2,5)
+CuffTarget()
+wait(2,5)
+CuffTarget()
+wait(2,5)
+CuffTarget()
+wait(2,5)
+CuffTarget()
+Serverhop:Teleport(game.PlaceId)
+
+end
